@@ -23,6 +23,8 @@ function fakeHevy() {
     const p = url.pathname;
     if (p === "/v1/workouts") return paged("workouts", workouts);
     if (p === "/v1/workouts/count") return Response.json({ workout_count: workouts.length });
+    // The real API answers with `workouts: []` (not `events`) when nothing changed.
+    if (p === "/v1/workouts/events") return Response.json({ page: 1, page_count: 1, workouts: [] });
     if (p.startsWith("/v1/workouts/")) {
       const w = workouts.find((x) => x.id === p.split("/").pop());
       return w ? Response.json(w) : new Response("nope", { status: 404 });
@@ -112,6 +114,11 @@ describe("MCP server", () => {
     await expect(call("analyze_exercise_progress", { exercise: "zercher deadlift" })).rejects.toThrow(
       /search_exercise_templates/,
     );
+  });
+
+  it("handles an empty workout events feed", async () => {
+    const res = await call("get_workout_events", { since: "2026-10-01T00:00:00Z" });
+    expect(res.events).toEqual([]);
   });
 
   it("reports auth errors", async () => {
