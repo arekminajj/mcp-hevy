@@ -129,8 +129,11 @@ export class HevyClient {
     return res.workout_count;
   }
 
-  listWorkoutEvents(since: string, page = 1, pageSize: number = MAX_PAGE_SIZE.events): Promise<WorkoutEventsPage> {
-    return this.page<WorkoutEventsPage>("/v1/workouts/events", "events", { since, page, pageSize });
+  async listWorkoutEvents(since: string, page = 1, pageSize: number = MAX_PAGE_SIZE.events): Promise<WorkoutEventsPage> {
+    const res = await this.page<WorkoutEventsPage>("/v1/workouts/events", "events", { since, page, pageSize });
+    // When nothing changed since `since`, the API returns `{ page, page_count, workouts: [] }`
+    // instead of an `events` array.
+    return { ...res, events: res.events ?? [] };
   }
 
   /**
